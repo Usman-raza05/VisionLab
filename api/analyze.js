@@ -138,54 +138,86 @@ export default async function handler(req, res) {
   // =========================================================
 
   async function callGroq() {
-    if (!GROQ_API_KEY) {
-      throw new Error("GROQ_API_KEY is not configured");
-    }
-
-    const response = await fetchWithTimeout(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${GROQ_API_KEY}`,
-        },
-
-        body: JSON.stringify({
-          model: "qwen/qwen3.6-27b",
-
-          messages: [
-            {
-              role: "user",
-
-              content: [
-                {
-                  type: "text",
-                  text: prompt,
-                },
-
-                {
-                  type: "image_url",
-
-                  image_url: {
-                    url: imageDataUrl,
-                  },
-                },
-              ],
-            },
-          ],
-
-          temperature: 0.2,
-
-          max_completion_tokens: 1200,
-        }),
-      },
-      8000
-    );
-
-    return await parseResponse(response, "Groq");
+  if (!GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY is not configured");
   }
+
+  const response = await fetchWithTimeout(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+
+      body: JSON.stringify({
+        model: "qwen/qwen3.6-27b",
+
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an image analysis AI. Return ONLY valid JSON. Do not use markdown, code fences, or additional text.",
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `${prompt}
+
+Return ONLY valid JSON in this exact structure:
+
+{
+  "title": "string",
+  "description": "string",
+  "objects": ["string"],
+  "colors": [
+    {
+      "name": "string",
+      "hex": "#000000"
+    }
+  ],
+  "text_detected": ["string"],
+  "mood_tags": ["string"],
+  "notable_details": ["string"]
+}`,
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageDataUrl,
+                },
+              },
+            ],
+          },
+        ],
+
+        temperature: 0.2,
+        max_completion_tokens: 1500,
+      }),
+    },
+    15000
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Groq (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+
+  const text =
+    data?.choices?.[0]?.message?.content || "";
+
+  if (!text) {
+    throw new Error("Groq returned an empty response");
+  }
+
+  return text;
+}
 
   // =========================================================
   // 2. GEMINI
@@ -196,10 +228,14 @@ export default async function handler(req, res) {
       throw new Error("GEMINI_API_KEY is not configured");
     }
 
+    // const models = [
+    //   "gemini-2.5-flash-lite",
+    //   "gemini-2.5-flash",
+    // ];
     const models = [
-      "gemini-2.5-flash-lite",
-      "gemini-2.5-flash",
-    ];
+  "gemini-3.5-flash-lite",
+  "gemini-3.5-flash",
+];
 
     let lastError = null;
 
