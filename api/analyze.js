@@ -179,10 +179,6 @@ export default async function handler(req, res) {
           temperature: 0.2,
 
           max_completion_tokens: 1200,
-
-          response_format: {
-            type: "json_object",
-          },
         }),
       },
       8000
