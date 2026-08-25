@@ -543,6 +543,9 @@
 //   });
 // }
 
+
+
+
 export default async function handler(req, res) {
   // =========================================================
   // METHOD CHECK
@@ -628,7 +631,9 @@ export default async function handler(req, res) {
 
     // Anthropic
     if (Array.isArray(data?.content)) {
-      return data.content.map((item) => item.text || "").join("");
+      return data.content
+        .map((item) => item.text || "")
+        .join("");
     }
 
     return "";
@@ -644,7 +649,9 @@ export default async function handler(req, res) {
     try {
       data = await response.json();
     } catch {
-      throw new Error(`${providerName} returned an invalid response`);
+      throw new Error(
+        `${providerName} returned an invalid response`
+      );
     }
 
     if (!response.ok) {
@@ -654,13 +661,17 @@ export default async function handler(req, res) {
         data?.message ||
         "Unknown API error";
 
-      throw new Error(`${providerName} (${response.status}): ${message}`);
+      throw new Error(
+        `${providerName} (${response.status}): ${message}`
+      );
     }
 
     const text = extractText(data);
 
     if (!text) {
-      throw new Error(`${providerName} returned an empty response`);
+      throw new Error(
+        `${providerName} returned an empty response`
+      );
     }
 
     return text;
@@ -678,7 +689,10 @@ export default async function handler(req, res) {
     let cleaned = text.trim();
 
     // Remove <think>...</think>
-    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, "");
+    cleaned = cleaned.replace(
+      /<think>[\s\S]*?<\/think>/gi,
+      ""
+    );
 
     // Remove markdown code fences
     cleaned = cleaned.replace(/```json/gi, "");
@@ -690,7 +704,9 @@ export default async function handler(req, res) {
     const firstBrace = cleaned.indexOf("{");
 
     if (firstBrace === -1) {
-      throw new Error("AI response does not contain JSON");
+      throw new Error(
+        "AI response does not contain JSON"
+      );
     }
 
     let depth = 0;
@@ -735,18 +751,28 @@ export default async function handler(req, res) {
     }
 
     if (endIndex === -1) {
-      throw new Error("AI returned incomplete JSON");
+      throw new Error(
+        "AI returned incomplete JSON"
+      );
     }
 
-    const jsonText = cleaned.slice(firstBrace, endIndex + 1);
+    const jsonText = cleaned.slice(
+      firstBrace,
+      endIndex + 1
+    );
 
     // Validate JSON
     try {
       JSON.parse(jsonText);
     } catch (error) {
-      console.error("[Vision Lab] Invalid JSON:", jsonText);
+      console.error(
+        "[Vision Lab] Invalid JSON:",
+        jsonText
+      );
 
-      throw new Error("Could not parse model response");
+      throw new Error(
+        "Could not parse model response"
+      );
     }
 
     return jsonText;
@@ -758,7 +784,9 @@ export default async function handler(req, res) {
 
   async function callMistral() {
     if (!MISTRAL_API_KEY) {
-      throw new Error("MISTRAL_API_KEY is not configured");
+      throw new Error(
+        "MISTRAL_API_KEY is not configured"
+      );
     }
 
     const response = await fetchWithTimeout(
@@ -799,10 +827,13 @@ export default async function handler(req, res) {
           max_tokens: 1200,
         }),
       },
-      10000,
+      10000
     );
 
-    const text = await parseResponse(response, "Mistral");
+    const text = await parseResponse(
+      response,
+      "Mistral"
+    );
 
     return extractFirstJsonObject(text);
   }
@@ -813,10 +844,15 @@ export default async function handler(req, res) {
 
   async function callGemini() {
     if (!GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not configured");
+      throw new Error(
+        "GEMINI_API_KEY is not configured"
+      );
     }
 
-    const models = ["gemini-3.5-flash-lite", "gemini-3.5-flash"];
+    const models = [
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash",
+    ];
 
     let lastError = null;
 
@@ -858,24 +894,34 @@ export default async function handler(req, res) {
               },
             }),
           },
-          10000,
+          10000
         );
 
         if (response.ok) {
-          const text = await parseResponse(response, "Gemini");
+          const text = await parseResponse(
+            response,
+            "Gemini"
+          );
 
           return extractFirstJsonObject(text);
         }
 
-        const errorData = await response.json().catch(() => null);
+        const errorData = await response
+          .json()
+          .catch(() => null);
 
         lastError = new Error(
           `Gemini (${response.status}): ${
-            errorData?.error?.message || "Request failed"
-          }`,
+            errorData?.error?.message ||
+            "Request failed"
+          }`
         );
 
-        if (![429, 500, 502, 503, 504].includes(response.status)) {
+        if (
+          ![429, 500, 502, 503, 504].includes(
+            response.status
+          )
+        ) {
           break;
         }
       } catch (error) {
@@ -883,7 +929,10 @@ export default async function handler(req, res) {
       }
     }
 
-    throw lastError || new Error("Gemini failed");
+    throw (
+      lastError ||
+      new Error("Gemini failed")
+    );
   }
 
   // =========================================================
@@ -892,7 +941,9 @@ export default async function handler(req, res) {
 
   async function callOpenRouter() {
     if (!OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY is not configured");
+      throw new Error(
+        "OPENROUTER_API_KEY is not configured"
+      );
     }
 
     const response = await fetchWithTimeout(
@@ -906,13 +957,16 @@ export default async function handler(req, res) {
           Authorization: `Bearer ${OPENROUTER_API_KEY}`,
 
           "HTTP-Referer":
-            process.env.APP_URL || "https://analyzeimage.vercel.app",
+            process.env.APP_URL ||
+            "https://analyzeimage.vercel.app",
 
           "X-Title": "Vision Lab",
         },
 
         body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+          model:
+            process.env.OPENROUTER_MODEL ||
+            "google/gemini-2.5-flash",
 
           messages: [
             {
@@ -939,10 +993,13 @@ export default async function handler(req, res) {
           max_tokens: 1200,
         }),
       },
-      10000,
+      10000
     );
 
-    const text = await parseResponse(response, "OpenRouter");
+    const text = await parseResponse(
+      response,
+      "OpenRouter"
+    );
 
     return extractFirstJsonObject(text);
   }
@@ -953,7 +1010,9 @@ export default async function handler(req, res) {
 
   async function callGroq() {
     if (!GROQ_API_KEY) {
-      throw new Error("GROQ_API_KEY is not configured");
+      throw new Error(
+        "GROQ_API_KEY is not configured"
+      );
     }
 
     const response = await fetchWithTimeout(
@@ -1012,12 +1071,17 @@ export default async function handler(req, res) {
           max_completion_tokens: 2000,
         }),
       },
-      15000,
+      15000
     );
 
-    const text = await parseResponse(response, "Groq");
+    const text = await parseResponse(
+      response,
+      "Groq"
+    );
 
-    console.log("[Vision Lab] Raw Groq response received");
+    console.log(
+      "[Vision Lab] Raw Groq response received"
+    );
 
     return extractFirstJsonObject(text);
   }
@@ -1028,7 +1092,9 @@ export default async function handler(req, res) {
 
   async function callAnthropic() {
     if (!ANTHROPIC_API_KEY) {
-      throw new Error("ANTHROPIC_API_KEY is not configured");
+      throw new Error(
+        "ANTHROPIC_API_KEY is not configured"
+      );
     }
 
     const response = await fetchWithTimeout(
@@ -1045,7 +1111,9 @@ export default async function handler(req, res) {
         },
 
         body: JSON.stringify({
-          model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6",
+          model:
+            process.env.ANTHROPIC_MODEL ||
+            "claude-sonnet-4-6",
 
           max_tokens: 1200,
           temperature: 0.2,
@@ -1074,40 +1142,46 @@ export default async function handler(req, res) {
           ],
         }),
       },
-      15000,
+      15000
     );
 
-    const text = await parseResponse(response, "Anthropic");
+    const text = await parseResponse(
+      response,
+      "Anthropic"
+    );
 
     return extractFirstJsonObject(text);
   }
-  
+
   // =========================================================
   // FALLBACK ORDER
   // =========================================================
 
   const providers = [
-      {
-        name: "Anthropic",
-        call: callAnthropic,
-      },
-    {
-      name: "Groq",
-      call: callGroq,
-    },
-    {
-      name: "OpenRouter",
-      call: callOpenRouter,
-    },
-    {
-      name: "Gemini",
-      call: callGemini,
-    },
     {
       name: "Mistral",
       call: callMistral,
     },
 
+    {
+      name: "Gemini",
+      call: callGemini,
+    },
+
+    {
+      name: "OpenRouter",
+      call: callOpenRouter,
+    },
+
+    {
+      name: "Groq",
+      call: callGroq,
+    },
+
+    {
+      name: "Anthropic",
+      call: callAnthropic,
+    },
   ];
 
   // =========================================================
@@ -1118,11 +1192,15 @@ export default async function handler(req, res) {
 
   for (const provider of providers) {
     try {
-      console.log(`[Vision Lab] Trying ${provider.name}...`);
+      console.log(
+        `[Vision Lab] Trying ${provider.name}...`
+      );
 
       const text = await provider.call();
 
-      console.log(`[Vision Lab] ${provider.name} succeeded`);
+      console.log(
+        `[Vision Lab] ${provider.name} succeeded`
+      );
 
       return res.status(200).json({
         provider: provider.name,
@@ -1138,9 +1216,12 @@ export default async function handler(req, res) {
       const errorMessage =
         error?.name === "AbortError"
           ? `${provider.name} timeout`
-          : error?.message || `${provider.name} failed`;
+          : error?.message ||
+            `${provider.name} failed`;
 
-      console.error(`[Vision Lab] ${errorMessage}`);
+      console.error(
+        `[Vision Lab] ${errorMessage}`
+      );
 
       errors.push({
         provider: provider.name,
