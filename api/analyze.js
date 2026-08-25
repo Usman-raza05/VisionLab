@@ -1081,12 +1081,16 @@ export default async function handler(req, res) {
 
     return extractFirstJsonObject(text);
   }
-
+  
   // =========================================================
   // FALLBACK ORDER
   // =========================================================
 
   const providers = [
+      {
+        name: "Anthropic",
+        call: callAnthropic,
+      },
     {
       name: "Groq",
       call: callGroq,
@@ -1104,10 +1108,6 @@ export default async function handler(req, res) {
       call: callMistral,
     },
 
-    {
-      name: "Anthropic",
-      call: callAnthropic,
-    },
   ];
 
   // =========================================================
