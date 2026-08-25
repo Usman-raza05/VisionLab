@@ -1158,6 +1158,11 @@ export default async function handler(req, res) {
   // =========================================================
 
   const providers = [
+      
+          {
+            name: "OpenRouter",
+            call: callOpenRouter,
+          },
       {
         name: "Gemini",
         call: callGemini,
@@ -1167,11 +1172,6 @@ export default async function handler(req, res) {
       call: callMistral,
     },
 
-
-    {
-      name: "OpenRouter",
-      call: callOpenRouter,
-    },
 
     {
       name: "Groq",
