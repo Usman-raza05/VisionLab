@@ -560,7 +560,7 @@ export default function VisionLab() {
               className="text-xs mt-3 text-center"
               style={{ color: "var(--muted)" }}
             >
-              Upload any photo — Claude will look at it and give you the full details
+              Upload any photo — AI will look at it and give you the full details
             </p>
           )}
         </div>
