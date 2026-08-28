@@ -248,7 +248,7 @@ VisionLab can be extended for many AI-powered computer vision use cases, such as
 
 Some planned improvements for VisionLab could include:
 
-* [ ] Drag & drop image upload
+* [x] Drag & drop image upload
 * [ ] Multiple image analysis
 * [x] Image history
 * [ ] Download analysis results
